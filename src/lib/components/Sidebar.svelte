@@ -21,9 +21,11 @@
       </span>
     </a>
 
+    <!-- svelte-ignore a11y_invalid_attribute -->
     <a
       href="javascript:void(0);"
       class="layout-menu-toggle menu-link text-large"
+      aria-label="Toggle menu"
     >
       <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle"></i>
       <i class="ti tabler-x d-block d-xl-none ti-sm align-middle"></i>

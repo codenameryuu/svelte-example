@@ -30,7 +30,12 @@
   <div
     class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none"
   >
-    <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
+    <!-- svelte-ignore a11y_invalid_attribute -->
+    <a
+      class="nav-item nav-link px-0 me-xl-6"
+      href="javascript:void(0)"
+      aria-label="Toggle menu"
+    >
       <i class="icon-base ti tabler-menu-2 icon-md"></i>
     </a>
   </div>
@@ -41,10 +46,12 @@
   >
     <ul class="navbar-nav flex-row align-items-center ms-md-auto">
       <li class="nav-item dropdown me-3 me-xl-2">
+        <!-- svelte-ignore a11y_invalid_attribute -->
         <a
           class="nav-link dropdown-toggle hide-arrow btn btn-icon btn-text-secondary rounded-pill"
           id="nav-theme"
           href="javascript:void(0);"
+          aria-label="Toggle theme"
           data-bs-toggle="dropdown"
         >
           <i
@@ -111,9 +118,11 @@
       </li>
 
       <li class="nav-item navbar-dropdown dropdown-user dropdown">
+        <!-- svelte-ignore a11y_invalid_attribute -->
         <a
           class="nav-link dropdown-toggle hide-arrow p-0"
           href="javascript:void(0);"
+          aria-label="User menu"
           data-bs-toggle="dropdown"
         >
           <div class="avatar avatar-online">
@@ -148,6 +157,7 @@
           </li>
 
           <li>
+            <!-- svelte-ignore a11y_invalid_attribute -->
             <a
               href="javascript:void(0)"
               class="dropdown-item"
