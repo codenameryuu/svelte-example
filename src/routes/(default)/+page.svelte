@@ -2,9 +2,11 @@
   import jQuery from "jquery";
   import { onMount } from "svelte";
 
+  import { goto } from "$app/navigation";
   import { cardAnimate } from "$lib/helpers/animate_helper";
   import { blockCard, unblockCard } from "$lib/helpers/block_ui_helper";
-  import { goto } from "$app/navigation";
+  import { login } from "$lib/api/auth_api";
+  import { notifyDanger } from "$lib/helpers/izi_toast_helper";
 
   function visiblePassword() {
     const passwordElement = jQuery("#password");
@@ -24,7 +26,30 @@
   }
 
   async function authenticate() {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    let email = jQuery("#email").val() as string;
+    let password = jQuery("#password").val() as string;
+
+    blockCard();
+
+    let result = await login(email, password);
+
+    unblockCard();
+
+    if (result.status) {
+      let user = result.data;
+      let token = result.token.access_token;
+      let expiredAt = result.token.expired_at;
+
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("expired_at", expiredAt);
+
+      await goto("/dashboard/home");
+    } else {
+      let errorMessage = result.error[0].message;
+
+      notifyDanger(errorMessage);
+    }
   }
 
   onMount(() => {
@@ -79,13 +104,7 @@
         });
       },
     }).on("core.form.valid", async function () {
-      blockCard();
-
       await authenticate();
-
-      unblockCard();
-
-      await goto("/dashboard/home");
     });
   });
 </script>
