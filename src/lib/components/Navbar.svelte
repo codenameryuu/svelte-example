@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
+
   type User = {
     name: string;
     email: string;
@@ -17,9 +19,11 @@
     onLogout?: () => void | Promise<void>;
   } = $props();
 
-  function handleLogout(event: MouseEvent) {
+  async function handleLogout(event: MouseEvent) {
     event.preventDefault();
     void onLogout?.();
+
+    await goto("/");
   }
 </script>
 
