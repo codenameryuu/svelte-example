@@ -2,7 +2,7 @@ import axios from "axios";
 
 let API_URL = import.meta.env.VITE_API_URL;
 
-const getProductCategory = async (page: number, perPage: number) => {
+const getProductCategory = async (page: number, perPage: number, orderBy: string, orderType: string) => {
   let token = localStorage.getItem("token");
 
   try {
@@ -11,11 +11,11 @@ const getProductCategory = async (page: number, perPage: number) => {
         is_paginate: true,
         page: page,
         per_page: perPage,
-        order_by: 'created_at',
-        order_type: 'desc',
+        order_by: orderBy,
+        order_type: orderType,
       },
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -25,4 +25,20 @@ const getProductCategory = async (page: number, perPage: number) => {
   }
 };
 
-export { getProductCategory };
+const deleteProductCategory = async (id: number | string) => {
+  let token = localStorage.getItem("token");
+
+  try {
+    let response = await axios.delete(`${API_URL}/api/product-category/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    return error.response.data;
+  }
+};
+
+export { getProductCategory, deleteProductCategory };
