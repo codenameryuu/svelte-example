@@ -11,8 +11,8 @@
   let productCategoryCount = $state(0);
 
   onMount(async () => {
-    let productResponse = await getProduct(1, 10);
-    let productCategoryResponse = await getProductCategory(1, 10);
+    let productResponse = await getProduct(1, 10, "name", "asc");
+    let productCategoryResponse = await getProductCategory(1, 10, "name", "asc");
 
     if (productResponse.status) {
       productCount = productResponse.pagination.total;
