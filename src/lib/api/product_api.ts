@@ -2,7 +2,7 @@ import axios from "axios";
 
 let API_URL = import.meta.env.VITE_API_URL;
 
-const getProduct = async (page: number, perPage: number) => {
+const getProduct = async (page: number, perPage: number, orderBy: string, orderType: string) => {
   let token = localStorage.getItem("token");
 
   try {
@@ -11,8 +11,8 @@ const getProduct = async (page: number, perPage: number) => {
         is_paginate: true,
         page: page,
         per_page: perPage,
-        order_by: 'created_at',
-        order_type: 'desc',
+        order_by: orderBy,
+        order_type: orderType,
       },
       headers: {
         "Authorization": `Bearer ${token}`,

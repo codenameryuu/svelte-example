@@ -25,7 +25,7 @@ const getProductCategory = async (page: number, perPage: number, orderBy: string
   }
 };
 
-const deleteProductCategory = async (id: number | string) => {
+const deleteProductCategory = async (id: number) => {
   let token = localStorage.getItem("token");
 
   try {
