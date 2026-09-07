@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { cardAnimate } from "$lib/helpers/animate_helper";
   import { getProduct } from "$lib/api/product_api";
   import { getProductCategory } from "$lib/api/product_category_api";
+
+  import { cardAnimate } from "$lib/utils/animate";
 
   let isLoading = $state(true);
   let productCount = $state(0);

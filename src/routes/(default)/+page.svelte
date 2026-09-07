@@ -3,10 +3,14 @@
   import { onMount } from "svelte";
 
   import { goto } from "$app/navigation";
-  import { cardAnimate } from "$lib/helpers/animate_helper";
-  import { blockCard, unblockCard } from "$lib/helpers/block_ui_helper";
+
   import { login } from "$lib/api/auth_api";
-  import { notifyDanger } from "$lib/helpers/izi_toast_helper";
+
+  import { saveSession } from "$lib/helpers/auth_helper";
+
+  import { cardAnimate } from "$lib/utils/animate";
+  import { blockCard, unblockCard } from "$lib/utils/block_ui";
+  import { notifyDanger } from "$lib/utils/izi_toast";
 
   function visiblePassword() {
     const passwordElement = jQuery("#password");
@@ -40,9 +44,7 @@
       let token = result.token.access_token;
       let expiredAt = result.token.expired_at;
 
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", token);
-      localStorage.setItem("expired_at", expiredAt);
+      saveSession(user, token, expiredAt);
 
       await goto("/dashboard/home");
     } else {
@@ -108,14 +110,6 @@
     });
   });
 </script>
-
-<svelte:head>
-  <link
-    rel="stylesheet"
-    href="/assets/dashboard/vendor/css/pages/page-auth.css"
-  />
-  <title>Login</title>
-</svelte:head>
 
 <div class="authentication-wrapper authentication-basic container-p-y">
   <div class="authentication-inner py-4">

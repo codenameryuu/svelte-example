@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
 
-  const pathname = $derived(page.url.pathname);
+  let urlPath = $derived(page.url.pathname);
 </script>
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -35,18 +35,18 @@
   <div class="menu-inner-shadow"></div>
 
   <ul class="menu-inner py-1">
-    <!-- Home -->
-    <li class="menu-item" class:active={pathname.startsWith("/dashboard/home")}>
+    <!-- * Home -->
+    <li class="menu-item" class:active={urlPath.startsWith("/dashboard/home")}>
       <a href="/dashboard/home" class="menu-link">
         <i class="menu-icon icon-base ti tabler-smart-home"></i>
         <div data-i18n="Beranda">Beranda</div>
       </a>
     </li>
 
-    <!-- Product Category -->
+    <!-- * Product Category -->
     <li
       class="menu-item"
-      class:active={pathname.startsWith("/dashboard/product-category")}
+      class:active={urlPath.startsWith("/dashboard/product-category")}
     >
       <a href="/dashboard/product-category" class="menu-link">
         <i class="menu-icon icon-base ti tabler-archive"></i>
@@ -54,11 +54,11 @@
       </a>
     </li>
 
-    <!-- Product -->
+    <!-- * Product -->
     <li
       class="menu-item"
-      class:active={pathname.startsWith("/dashboard/product") &&
-        !pathname.startsWith("/dashboard/product-category")}
+      class:active={urlPath.startsWith("/dashboard/product") &&
+        !urlPath.startsWith("/dashboard/product-category")}
     >
       <a href="/dashboard/product" class="menu-link">
         <i class="menu-icon icon-base ti tabler-file-text"></i>
@@ -66,10 +66,10 @@
       </a>
     </li>
 
-    <!-- Websocket -->
+    <!-- * Websocket -->
     <li
       class="menu-item"
-      class:active={pathname.startsWith("/dashboard/websocket")}
+      class:active={urlPath.startsWith("/dashboard/websocket")}
     >
       <a href="/dashboard/websocket" class="menu-link">
         <i class="menu-icon icon-base ti tabler-message-circle"></i>

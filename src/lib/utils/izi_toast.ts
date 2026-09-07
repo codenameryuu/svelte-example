@@ -1,6 +1,6 @@
 import iziToast from "izitoast";
 
-const notifyInfo = (message: string) => {
+function notifyInfo(message: string) {
   iziToast.show({
     icon: "ti tabler-alert-circle-filled",
     iconColor: "#ffffff",
@@ -16,7 +16,7 @@ const notifyInfo = (message: string) => {
   });
 }
 
-const notifySuccess = (message: string) => {
+function notifySuccess(message: string) {
   iziToast.show({
     icon: "ti tabler-circle-check-filled",
     iconColor: "#ffffff",
@@ -32,7 +32,7 @@ const notifySuccess = (message: string) => {
   });
 }
 
-const notifyDanger = (message: string) => {
+function notifyDanger(message: string) {
   iziToast.show({
     icon: "ti tabler-circle-x-filled",
     iconColor: "#ffffff",

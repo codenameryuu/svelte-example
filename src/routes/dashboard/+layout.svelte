@@ -1,9 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
   import Alert from "$lib/components/Alert.svelte";
   import Footer from "$lib/components/Footer.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
+
+  import { metadata } from "$lib/helpers/metadata_helper";
 
   let { children } = $props();
 
@@ -30,6 +33,12 @@
   });
 </script>
 
+<svelte:head>
+  <title>{metadata().title}</title>
+  <meta name="description" content={metadata().description} />
+  <meta name="keywords" content={metadata().keywords} />
+</svelte:head>
+
 <div class="layout-wrapper layout-content-navbar">
   <div class="layout-container">
     <Sidebar />
@@ -51,9 +60,9 @@
     </div>
   </div>
 
-  <!-- Overlay -->
+  <!-- * Overlay -->
   <div class="layout-overlay layout-menu-toggle"></div>
 
-  <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+  <!-- * Drag Target Area To SlideIn Menu On Small Screens -->
   <div class="drag-target"></div>
 </div>

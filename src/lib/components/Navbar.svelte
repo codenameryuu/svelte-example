@@ -1,27 +1,14 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
 
-  type User = {
-    name: string;
-    email: string;
-    avatarUrl: string;
-  };
+  import { getSession } from "$lib/helpers/auth_helper";
 
-  let {
-    user = {
-      name: "User",
-      email: "user@example.com",
-      avatarUrl: "/assets/dashboard/custom/image/logo/logo.png",
-    },
-    onLogout,
-  }: {
-    user?: User;
-    onLogout?: () => void | Promise<void>;
-  } = $props();
+  let session = getSession();
+
+  let user = $state(session.user);
 
   async function handleLogout(event: MouseEvent) {
     event.preventDefault();
-    void onLogout?.();
 
     await goto("/");
   }
@@ -130,7 +117,11 @@
           data-bs-toggle="dropdown"
         >
           <div class="avatar avatar-online">
-            <img src={user.avatarUrl} alt={user.name} class="rounded-circle" />
+            <img
+              src={user?.profile_file_url}
+              alt="User Avatar"
+              class="rounded-circle"
+            />
           </div>
         </a>
 
@@ -141,16 +132,16 @@
                 <div class="flex-shrink-0 me-2">
                   <div class="avatar avatar-online">
                     <img
-                      src={user.avatarUrl}
-                      alt={user.name}
+                      src={user?.profile_file_url}
+                      alt="User Avatar"
                       class="rounded-circle"
                     />
                   </div>
                 </div>
 
                 <div class="flex-grow-1">
-                  <h6 class="mb-0">{user.name}</h6>
-                  <small class="text-body-secondary">{user.email}</small>
+                  <h6 class="mb-0">{user?.name}</h6>
+                  <small class="text-body-secondary">{user?.email}</small>
                 </div>
               </div>
             </div>

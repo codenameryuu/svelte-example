@@ -1,6 +1,9 @@
-function getBlockBackgroundColor(): string {
-  const isDarkMode =
-    document.documentElement.getAttribute('data-bs-theme') === 'dark';
+function getBlockBackgroundColor() {
+  let isDarkMode = false;
+
+  if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
+    isDarkMode = true;
+  }
 
   if (isDarkMode) {
     return 'rgba(30, 30, 30, 0.7)';
@@ -9,7 +12,7 @@ function getBlockBackgroundColor(): string {
   return `rgba(${window.Helpers.getCssVar('black-rgb')}, 0.5)`;
 }
 
-const customSpinnerHTML = `
+let customSpinnerHTML = `
 	<div class="sk-wave mx-auto">
 		<div class="sk-rect sk-wave-rect"></div>
 		<div class="sk-rect sk-wave-rect"></div>
@@ -20,7 +23,7 @@ const customSpinnerHTML = `
 `;
 
 function applyCustomSpinner(selector: string) {
-  const notiflixBlockElement = document.querySelector(`${selector} .notiflix-block`);
+  let notiflixBlockElement = document.querySelector(`${selector} .notiflix-block`);
 
   if (notiflixBlockElement) {
     notiflixBlockElement.innerHTML = customSpinnerHTML;
@@ -28,7 +31,7 @@ function applyCustomSpinner(selector: string) {
 }
 
 function blockCard() {
-  const cardElementClass = '.card';
+  let cardElementClass = '.card';
 
   Block.standard(cardElementClass, {
     backgroundColor: getBlockBackgroundColor(),
