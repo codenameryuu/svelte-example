@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Swal from "sweetalert2";
 
   import { getProductCategory, deleteProductCategory } from "$lib/api/product_category_api";
 
@@ -8,11 +7,11 @@
   import PaginationTable from "$lib/components/PaginationTable.svelte";
 
   import CheckHelper from "$lib/helpers/check_helper";
+  import HashHelper from "$lib/helpers/hash_helper";
 
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
   import { notifyDanger, notifySuccess } from "$lib/utils/izi_toast";
-  import HashHelper from "$lib/helpers/hash_helper";
 
   let isLoading = $state(true);
 
@@ -26,7 +25,7 @@
   let lastPage = $derived(Number(pagination.last_page) || 1);
   let total = $derived(Number(pagination.total) || 0);
 
-  let filter = $state({
+  let filterForm = $state({
     name: "",
   });
 
@@ -36,8 +35,8 @@
 
     let filterPayload: Record<string, string> = {};
 
-    if (CheckHelper.isset(filter.name)) {
-      filterPayload.name = filter.name;
+    if (CheckHelper.isset(filterForm.name)) {
+      filterPayload.name = filterForm.name;
     }
 
     let payload = {
@@ -59,6 +58,28 @@
     }
 
     isLoading = false;
+  }
+
+  async function deleteData(hashId: string) {
+    blockCard();
+
+    let id = HashHelper.decrypt(hashId);
+
+    let payload = {
+      productCategoryId: id,
+    };
+
+    let response = await deleteProductCategory(payload);
+
+    if (response.status) {
+      notifySuccess(response.message);
+    } else {
+      notifyDanger(response.message);
+    }
+
+    unblockCard();
+
+    await fetchData(1);
   }
 
   async function handlePerPageChange() {
@@ -91,27 +112,9 @@
       },
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
-    }).then(async (result) => {
+    }).then(async (result: any) => {
       if (result.isConfirmed) {
-        blockCard();
-
-        let id = HashHelper.decrypt(hashId);
-
-        let payload = {
-          productCategoryId: id,
-        };
-
-        let response = await deleteProductCategory(payload);
-
-        if (response.status) {
-          notifySuccess(response.message);
-        } else {
-          notifyDanger(response.message);
-        }
-
-        unblockCard();
-
-        await fetchData(1);
+        await deleteData(hashId);
       }
     });
   }
@@ -143,7 +146,7 @@
       </div>
 
       <div class="card-body">
-        <div class="d-flex align-items-center gap-2 my-4">
+        <div class="d-flex align-items-center gap-2">
           <label class="form-label mb-0" for="perPage">Tampilkan</label>
 
           <select class="form-select w-auto" id="perPage" bind:value={perPage} onchange={handlePerPageChange}>
@@ -232,7 +235,7 @@
         <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <form id="filterForm" method="GET" enctype="multipart/form-data" onsubmit={handleFilter}>
+      <form id="filterForm" method="GET" action="javascript:void(0)" enctype="multipart/form-data" onsubmit={handleFilter}>
         <div class="modal-body">
           <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12">
@@ -244,7 +247,7 @@
                   class="form-control"
                   name="filter[name]"
                   id="filterName"
-                  bind:value={filter.name}
+                  bind:value={filterForm.name}
                   placeholder="Masukkan Nama"
                   autocomplete="off" />
               </div>

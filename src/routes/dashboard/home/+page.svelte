@@ -10,7 +10,9 @@
   let productCount = $state(0);
   let productCategoryCount = $state(0);
 
-  onMount(async () => {
+  async function fetchData() {
+    isLoading = true;
+
     let payload = {
       isPaginate: true,
       page: 1,
@@ -31,6 +33,10 @@
     }
 
     isLoading = false;
+  }
+
+  onMount(async () => {
+    await fetchData();
   });
 </script>
 

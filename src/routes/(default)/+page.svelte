@@ -12,6 +12,11 @@
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
   import { notifyDanger } from "$lib/utils/izi_toast";
 
+  let loginForm = $state({
+    email: "",
+    password: "",
+  });
+
   function visiblePassword() {
     const passwordElement = jQuery("#password");
     const passwordIconElement = jQuery("#password-icon");
@@ -30,12 +35,9 @@
   }
 
   async function authenticate() {
-    let email = jQuery("#email").val() as string;
-    let password = jQuery("#password").val() as string;
-
     let payload = {
-      email: email,
-      password: password,
+      email: loginForm.email,
+      password: loginForm.password,
     };
 
     blockCard();
@@ -59,8 +61,8 @@
     }
   }
 
-  onMount(() => {
-    const loginFormDocumentElement = document.getElementById("loginForm");
+  function initFormValidation() {
+    let loginFormDocumentElement = document.getElementById("loginForm");
 
     FormValidation.formValidation(loginFormDocumentElement, {
       fields: {
@@ -102,6 +104,10 @@
     }).on("core.form.valid", async function () {
       await authenticate();
     });
+  }
+
+  onMount(() => {
+    initFormValidation();
   });
 </script>
 
@@ -121,7 +127,7 @@
               <div class="mb-3">
                 <label class="form-label" for="email">Email</label>
 
-                <input type="email" class="form-control" name="email" id="email" placeholder="Masukkan Email" autocomplete="off" />
+                <input type="email" class="form-control" name="email" id="email" bind:value={loginForm.email} placeholder="Masukkan Email" autocomplete="off" />
               </div>
             </div>
 
@@ -135,6 +141,7 @@
                     class="form-control"
                     name="password"
                     id="password"
+                    bind:value={loginForm.password}
                     placeholder="············"
                     data-original-type="password"
                     autocomplete="off" />

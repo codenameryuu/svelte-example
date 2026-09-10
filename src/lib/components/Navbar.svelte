@@ -1,17 +1,52 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
-  import { getSession } from "$lib/helpers/auth_helper";
+  import { logout } from "$lib/api/auth_api";
+
+  import { getSession, clearSession } from "$lib/helpers/auth_helper";
+
+  type ThemeValue = "light" | "dark" | "system";
 
   let session = getSession();
 
   let user = $state(session.user);
+  let activeTheme = $state<ThemeValue>("light");
+
+  function handleThemeChange(theme: ThemeValue) {
+    const helpers = window.Helpers;
+    const templateName = window.templateName || document.documentElement.getAttribute("data-template") || "vertical-menu-template";
+
+    if (!helpers?.setTheme) return;
+
+    helpers.setStoredTheme?.(templateName, theme);
+    helpers.setTheme(theme);
+    helpers.showActiveTheme?.(theme, true);
+    helpers.syncCustomOptions?.(theme);
+
+    let currTheme: "light" | "dark" = theme === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme;
+
+    helpers.switchImage?.(currTheme);
+    activeTheme = theme;
+  }
 
   async function handleLogout(event: MouseEvent) {
     event.preventDefault();
 
-    await goto("/");
+    window.location.href = "/";
+
+    await logout();
+
+    clearSession();
   }
+
+  onMount(() => {
+    const stored = (localStorage.getItem(`templateCustomizer-${window.templateName || "vertical-menu-template"}--Theme`) ||
+      document.documentElement.getAttribute("data-bs-theme") ||
+      "light") as ThemeValue;
+
+    activeTheme = stored;
+    window.Helpers?.showActiveTheme?.(window.Helpers.getPreferredTheme?.() ?? stored);
+  });
 </script>
 
 <nav class="layout-navbar container-xxl navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
@@ -38,7 +73,13 @@
 
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-theme-text">
           <li>
-            <button type="button" class="dropdown-item align-items-center active" data-bs-theme-value="light" aria-pressed="false">
+            <button
+              type="button"
+              class="dropdown-item align-items-center"
+              class:active={activeTheme === "light"}
+              data-bs-theme-value="light"
+              aria-pressed={activeTheme === "light"}
+              onclick={() => handleThemeChange("light")}>
               <span>
                 <i class="icon-base ti tabler-sun icon-22px me-3" data-icon="sun"></i>
                 Terang
@@ -47,7 +88,13 @@
           </li>
 
           <li>
-            <button type="button" class="dropdown-item align-items-center" data-bs-theme-value="dark" aria-pressed="true">
+            <button
+              type="button"
+              class="dropdown-item align-items-center"
+              class:active={activeTheme === "dark"}
+              data-bs-theme-value="dark"
+              aria-pressed={activeTheme === "dark"}
+              onclick={() => handleThemeChange("dark")}>
               <span>
                 <i class="icon-base ti tabler-moon-stars icon-22px me-3" data-icon="moon-stars"></i>
                 Gelap
@@ -56,7 +103,13 @@
           </li>
 
           <li>
-            <button type="button" class="dropdown-item align-items-center" data-bs-theme-value="system" aria-pressed="false">
+            <button
+              type="button"
+              class="dropdown-item align-items-center"
+              class:active={activeTheme === "system"}
+              data-bs-theme-value="system"
+              aria-pressed={activeTheme === "system"}
+              onclick={() => handleThemeChange("system")}>
               <span>
                 <i class="icon-base ti tabler-device-desktop-analytics icon-22px me-3" data-icon="device-desktop-analytics"></i>
                 Sistem

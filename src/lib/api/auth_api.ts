@@ -1,7 +1,6 @@
 import axios from "axios";
 
 let API_URL = import.meta.env.VITE_API_URL;
-let BEARER_TOKEN = localStorage.getItem("token");
 
 async function register(request: any) {
   let url = `${API_URL}/api/auth/register`;
@@ -39,16 +38,17 @@ async function login(request: any) {
 
 async function logout() {
   let url = `${API_URL}/api/auth/logout`;
+  let token = localStorage.getItem("token");
 
   return await axios.post(url, null, {
     headers: {
-      "Authorization": `Bearer ${BEARER_TOKEN}`,
+      "Authorization": `Bearer ${token}`,
     },
   })
     .then(res => {
       return res.data;
     }).catch(err => {
-      return err.response.data;
+      return err.response?.data ?? { status: false, message: "Logout gagal" };
     });
 };
 

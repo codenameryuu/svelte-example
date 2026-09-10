@@ -16,4 +16,10 @@ function getSession() {
   };
 }
 
-export { saveSession, getSession };
+function clearSession() {
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+  localStorage.removeItem("expired_at");
+}
+
+export { saveSession, getSession, clearSession };

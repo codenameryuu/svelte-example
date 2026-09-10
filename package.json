@@ -31,7 +31,6 @@
 		"hashids": "^2.3.0",
 		"izitoast": "^1.4.0",
 		"jquery": "^4.0.0",
-		"luxon": "^3.7.2",
-		"sweetalert2": "^11.26.25"
+		"luxon": "^3.7.2"
 	}
 }

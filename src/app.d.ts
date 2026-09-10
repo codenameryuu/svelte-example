@@ -16,14 +16,25 @@ declare global {
   const bootstrap: any;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Swal: any;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Block: {
     standard: (selector: string, options?: Record<string, unknown>) => void;
     remove: (selector: string) => void;
   };
 
   interface Window {
+    templateName?: string;
     Helpers: {
       getCssVar: (name: string) => string;
+      getStoredTheme?: (themeName?: string) => string;
+      getPreferredTheme?: (themeName?: string) => string;
+      setStoredTheme?: (templateName: string, theme: string) => void;
+      setTheme?: (theme: string) => void;
+      showActiveTheme?: (theme: string, focus?: boolean) => void;
+      syncCustomOptions?: (theme: string) => void;
+      switchImage?: (style: string) => void;
     };
   }
 }
