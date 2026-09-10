@@ -33,9 +33,14 @@
     let email = jQuery("#email").val() as string;
     let password = jQuery("#password").val() as string;
 
+    let payload = {
+      email: email,
+      password: password,
+    };
+
     blockCard();
 
-    let result = await login(email, password);
+    let result = await login(payload);
 
     unblockCard();
 
@@ -87,21 +92,10 @@
         trigger: new FormValidation.plugins.Trigger(),
         submitButton: new FormValidation.plugins.SubmitButton(),
       },
-      init: (instance: {
-        on: (
-          event: string,
-          handler: (e: {
-            element: HTMLElement;
-            messageElement: HTMLElement;
-          }) => void,
-        ) => void;
-      }) => {
+      init: (instance: { on: (event: string, handler: (e: { element: HTMLElement; messageElement: HTMLElement }) => void) => void }) => {
         instance.on("plugins.message.placed", function (e) {
           if (e.element.parentElement?.classList.contains("input-group")) {
-            e.element.parentElement.insertAdjacentElement(
-              "afterend",
-              e.messageElement,
-            );
+            e.element.parentElement.insertAdjacentElement("afterend", e.messageElement);
           }
         });
       },
@@ -117,33 +111,17 @@
       <div class="card-body">
         <div class="d-flex justify-content-center mb-2">
           <a href="/">
-            <img
-              src="/assets/dashboard/custom/image/logo/logo.png"
-              width="80"
-              alt="Logo"
-            />
+            <img src="/assets/dashboard/custom/image/logo/logo.png" width="80" alt="Logo" />
           </a>
         </div>
 
-        <form
-          id="loginForm"
-          method="POST"
-          action="javascript:void(0)"
-          enctype="multipart/form-data"
-        >
+        <form id="loginForm" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
           <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12">
               <div class="mb-3">
                 <label class="form-label" for="email">Email</label>
 
-                <input
-                  type="email"
-                  class="form-control"
-                  name="email"
-                  id="email"
-                  placeholder="Masukkan Email"
-                  autocomplete="off"
-                />
+                <input type="email" class="form-control" name="email" id="email" placeholder="Masukkan Email" autocomplete="off" />
               </div>
             </div>
 
@@ -159,17 +137,10 @@
                     id="password"
                     placeholder="············"
                     data-original-type="password"
-                    autocomplete="off"
-                  />
+                    autocomplete="off" />
 
-                  <button
-                    type="button"
-                    class="input-group-text cursor-pointer"
-                    aria-label="Toggle password visibility"
-                    onclick={visiblePassword}
-                  >
-                    <i class="icon-base ti tabler-eye-off" id="password-icon"
-                    ></i>
+                  <button type="button" class="input-group-text cursor-pointer" aria-label="Toggle password visibility" onclick={visiblePassword}>
+                    <i class="icon-base ti tabler-eye-off" id="password-icon"></i>
                   </button>
                 </div>
               </div>

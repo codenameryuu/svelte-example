@@ -1,14 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import Swal from "sweetalert2";
 
   import { getProductCategory, deleteProductCategory } from "$lib/api/product_category_api";
 
   import TableSkeleton from "$lib/components/TableSkeleton.svelte";
   import PaginationTable from "$lib/components/PaginationTable.svelte";
 
+  import CheckHelper from "$lib/helpers/check_helper";
+
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
   import { notifyDanger, notifySuccess } from "$lib/utils/izi_toast";
+  import HashHelper from "$lib/helpers/hash_helper";
 
   let isLoading = $state(true);
 
@@ -22,11 +26,32 @@
   let lastPage = $derived(Number(pagination.last_page) || 1);
   let total = $derived(Number(pagination.total) || 0);
 
+  let filter = $state({
+    name: "",
+  });
+
   async function fetchData(targetPage = page) {
     isLoading = true;
     page = targetPage;
 
-    let response = await getProductCategory(page, perPage, orderBy, orderType);
+    let filterPayload: Record<string, string> = {};
+
+    if (CheckHelper.isset(filter.name)) {
+      filterPayload.name = filter.name;
+    }
+
+    let payload = {
+      isPaginate: true,
+      page: page,
+      perPage: perPage,
+      orderBy: orderBy,
+      orderType: orderType,
+      ...(Object.keys(filterPayload).length > 0 && {
+        filter: filterPayload,
+      }),
+    };
+
+    let response = await getProductCategory(payload);
 
     if (response.status) {
       data = response.data;
@@ -36,30 +61,59 @@
     isLoading = false;
   }
 
-  async function handleDeleteProductCategory(id: number) {
-    const confirmed = window.confirm("Yakin ingin menghapus data ini?");
-
-    if (!confirmed) {
-      return;
-    }
-
-    blockCard();
-
-    let response = await deleteProductCategory(Number(id));
-
-    unblockCard();
-
-    if (response.status) {
-      notifySuccess(response.message || "Data berhasil dihapus");
-      await fetchData(page);
-    } else {
-      let errorMessage = response.error?.[0]?.message || response.message || "Gagal menghapus data";
-      notifyDanger(errorMessage);
-    }
-  }
-
   async function handlePerPageChange() {
     await fetchData(1);
+  }
+
+  async function handleFilter(e: SubmitEvent) {
+    e.preventDefault();
+
+    let filterModal = document.getElementById("filterModal");
+
+    if (filterModal) {
+      let modal = bootstrap.Modal.getInstance(filterModal) || new bootstrap.Modal(filterModal);
+      modal.hide();
+    }
+
+    await fetchData(1);
+  }
+
+  async function handleDelete(hashId: string) {
+    Swal.fire({
+      icon: "question",
+      text: "Apakah Anda yakin ingin menghapus data ini ?",
+      showCancelButton: true,
+      buttonsStyling: false,
+      reverseButtons: true,
+      customClass: {
+        confirmButton: "btn btn-danger",
+        cancelButton: "btn btn-secondary",
+      },
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        blockCard();
+
+        let id = HashHelper.decrypt(hashId);
+
+        let payload = {
+          productCategoryId: id,
+        };
+
+        let response = await deleteProductCategory(payload);
+
+        if (response.status) {
+          notifySuccess(response.message);
+        } else {
+          notifyDanger(response.message);
+        }
+
+        unblockCard();
+
+        await fetchData(1);
+      }
+    });
   }
 
   onMount(async () => {
@@ -93,14 +147,13 @@
           <label class="form-label mb-0" for="perPage">Tampilkan</label>
 
           <select class="form-select w-auto" id="perPage" bind:value={perPage} onchange={handlePerPageChange}>
-            <option value={5}>5</option>
             <option value={10}>10</option>
-            <option value={20}>20</option>
             <option value={25}>25</option>
             <option value={50}>50</option>
+            <option value={100}>100</option>
           </select>
 
-          <span class="text-muted">data</span>
+          <span class="text-muted">entri</span>
         </div>
 
         <div class="table-responsive">
@@ -119,38 +172,44 @@
               <TableSkeleton row={perPage} columns={3} />
             {:else}
               <tbody class="text-center">
-                {#each data as row, index}
-                  <tr>
-                    <td class="text-center">
-                      {index + 1}
-                    </td>
+                {#if data.length > 0}
+                  {#each data as row, index}
+                    <tr>
+                      <td class="text-center">
+                        {index + 1}
+                      </td>
 
-                    <td>
-                      {row.name}
-                    </td>
+                      <td>
+                        {row.name}
+                      </td>
 
-                    <td>
-                      <div class="dropdown">
-                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-label="Menu aksi">
-                          <i class="icon-base ti tabler-dots-vertical"></i>
-                        </button>
+                      <td>
+                        <div class="dropdown">
+                          <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-label="Menu aksi">
+                            <i class="icon-base ti tabler-dots-vertical"></i>
+                          </button>
 
-                        <div class="dropdown-menu">
-                          <a class="dropdown-item text-success" href="/dashboard/product-category/edit/{row.id}">
-                            <i class="icon-base ti tabler-edit me-1"></i>
-                            Ubah
-                          </a>
+                          <div class="dropdown-menu">
+                            <a class="dropdown-item text-success" href="/dashboard/product-category/edit/{HashHelper.encrypt(row.id)}">
+                              <i class="icon-base ti tabler-edit me-1"></i>
+                              Ubah
+                            </a>
 
-                          <!-- svelte-ignore a11y_invalid_attribute -->
-                          <a class="dropdown-item text-danger" href="javascript:void(0);" onclick={() => handleDeleteProductCategory(row.id)}>
-                            <i class="icon-base ti tabler-trash me-1"></i>
-                            Hapus
-                          </a>
+                            <!-- svelte-ignore a11y_invalid_attribute -->
+                            <a class="dropdown-item text-danger" href="javascript:void(0);" onclick={() => handleDelete(HashHelper.encrypt(row.id))}>
+                              <i class="icon-base ti tabler-trash me-1"></i>
+                              Hapus
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
+                    </tr>
+                  {/each}
+                {:else}
+                  <tr>
+                    <td colspan="3" class="text-center">Tidak ada data yang tersedia pada tabel ini</td>
                   </tr>
-                {/each}
+                {/if}
               </tbody>
             {/if}
           </table>
@@ -164,8 +223,6 @@
   </div>
 </div>
 
-<form id="deleteForm" method="POST" action="javascript:void(0)"></form>
-
 <div class="modal fade" id="filterModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -175,14 +232,21 @@
         <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <form id="filterForm" method="GET" action="javascript:void(0)" enctype="multipart/form-data">
+      <form id="filterForm" method="GET" enctype="multipart/form-data" onsubmit={handleFilter}>
         <div class="modal-body">
           <div class="row">
             <div class="col-lg-12 col-md-12 col-sm-12">
               <div class="mb-3">
                 <label class="form-label" for="filterName"> Nama </label>
 
-                <input type="text" class="form-control" name="filter[name]" id="filterName" value="" placeholder="Masukkan Nama" autocomplete="off" />
+                <input
+                  type="text"
+                  class="form-control"
+                  name="filter[name]"
+                  id="filterName"
+                  bind:value={filter.name}
+                  placeholder="Masukkan Nama"
+                  autocomplete="off" />
               </div>
             </div>
           </div>

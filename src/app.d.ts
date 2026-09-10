@@ -13,6 +13,9 @@ declare global {
   const FormValidation: any;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bootstrap: any;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Block: {
     standard: (selector: string, options?: Record<string, unknown>) => void;
     remove: (selector: string) => void;
