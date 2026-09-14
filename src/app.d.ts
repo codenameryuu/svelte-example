@@ -24,7 +24,18 @@ declare global {
     remove: (selector: string) => void;
   };
 
+  interface JQuery {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    select2: ((options?: Record<string, any> | string) => JQuery) & {
+      amd?: {
+        define: (name: string, deps: string[], factory: () => unknown) => unknown;
+        require: unknown;
+      };
+    };
+  }
+
   interface Window {
+    jQuery: JQueryStatic;
     templateName?: string;
     Helpers: {
       getCssVar: (name: string) => string;

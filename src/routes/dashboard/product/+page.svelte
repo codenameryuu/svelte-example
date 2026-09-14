@@ -1,83 +1,382 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
 
-  import { getProduct } from "$lib/api/product_api";
-  import { getProductCategory } from "$lib/api/product_category_api";
+  import ProductCategoryApi from "$lib/api/product_category_api";
+  import ProductApi from "$lib/api/product_api";
+
+  import TableSkeleton from "$lib/components/TableSkeleton.svelte";
+  import PaginationTable from "$lib/components/PaginationTable.svelte";
+
+  import FormatterHelper from "$lib/helpers/formatter_helper";
+  import CheckHelper from "$lib/helpers/check_helper";
+  import HashHelper from "$lib/helpers/hash_helper";
 
   import { cardAnimate } from "$lib/utils/animate";
+  import { blockCard, unblockCard } from "$lib/utils/block_ui";
+  import { formatNumberElement } from "$lib/utils/formatter";
+  import { notifyDanger, notifySuccess } from "$lib/utils/izi_toast";
+  import { loadRegex } from "$lib/utils/regex";
+  import { loadElementSelect2Modal } from "$lib/utils/select2";
+  import "$lib/utils/select2_translation";
 
   let isLoading = $state(true);
-  let productCount = $state(0);
-  let productCategoryCount = $state(0);
 
-  onMount(async () => {
-    let productResponse = await getProduct(1, 10, "name", "asc");
-    let productCategoryResponse = await getProductCategory(1, 10, "name", "asc");
+  let productCategory = $state<any[]>([]);
 
-    if (productResponse.status) {
-      productCount = productResponse.pagination.total;
+  let data = $state<any[]>([]);
+  let pagination = $state<any>({});
+
+  let page = $state(1);
+  let perPage = $state(10);
+  let orderBy = $state("name");
+  let orderType = $state("asc");
+  let lastPage = $derived(Number(pagination.last_page) || 1);
+  let total = $derived(Number(pagination.total) || 0);
+
+  let filterForm = $state({
+    productCategoryId: "",
+    name: "",
+    price: "",
+  });
+
+  async function fetchProductCategory() {
+    let payload = {
+      isPaginate: false,
+      page: 1,
+      perPage: 10,
+      orderBy: "name",
+      orderType: "asc",
+    };
+
+    let response = await ProductCategoryApi.getProductCategory(payload);
+
+    if (response.status) {
+      productCategory = response.data;
+    }
+  }
+
+  async function fetchData(targetPage = page) {
+    isLoading = true;
+    page = targetPage;
+
+    let filterPayload: Record<string, string> = {};
+
+    if (CheckHelper.isset(filterForm.productCategoryId)) {
+      filterPayload.product_category_id = filterForm.productCategoryId;
     }
 
-    if (productCategoryResponse.status) {
-      productCategoryCount = productCategoryResponse.pagination.total;
+    if (CheckHelper.isset(filterForm.name)) {
+      filterPayload.name = filterForm.name;
+    }
+
+    if (CheckHelper.isset(filterForm.price)) {
+      filterPayload.price = filterForm.price;
+    }
+
+    let payload = {
+      isPaginate: true,
+      page: page,
+      perPage: perPage,
+      orderBy: orderBy,
+      orderType: orderType,
+      ...(Object.keys(filterPayload).length > 0 && {
+        filter: filterPayload,
+      }),
+    };
+
+    let response = await ProductApi.getProduct(payload);
+
+    if (response.status) {
+      data = response.data;
+      pagination = response.pagination;
     }
 
     isLoading = false;
+  }
+
+  async function deleteData(hashId: string) {
+    blockCard();
+
+    let id = HashHelper.decrypt(hashId);
+
+    let payload = {
+      productId: id,
+    };
+
+    let response = await ProductApi.deleteProduct(payload);
+
+    if (response.status) {
+      notifySuccess(response.message);
+    } else {
+      notifyDanger(response.message);
+    }
+
+    unblockCard();
+
+    await fetchData(1);
+  }
+
+  async function handlePerPageChange() {
+    await fetchData(1);
+  }
+
+  async function handleFilter(e: SubmitEvent) {
+    e.preventDefault();
+
+    let filterModal = document.getElementById("filterModal");
+
+    if (filterModal) {
+      let modal = bootstrap.Modal.getInstance(filterModal) || new bootstrap.Modal(filterModal);
+      modal.hide();
+    }
+
+    await fetchData(1);
+  }
+
+  async function handleDelete(hashId: string) {
+    Swal.fire({
+      icon: "question",
+      text: "Apakah Anda yakin ingin menghapus data ini ?",
+      showCancelButton: true,
+      buttonsStyling: false,
+      reverseButtons: true,
+      customClass: {
+        confirmButton: "btn btn-danger",
+        cancelButton: "btn btn-secondary",
+      },
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    }).then(async (result: any) => {
+      if (result.isConfirmed) {
+        await deleteData(hashId);
+      }
+    });
+  }
+
+  function initSelect2() {
+    let jQuery = window.jQuery;
+    let element = jQuery("#filterProductCategoryId");
+
+    loadElementSelect2Modal(element);
+  }
+
+  onMount(async () => {
+    await fetchProductCategory();
+    await fetchData(1);
+    await tick();
+    loadRegex();
+    initSelect2();
   });
 </script>
 
 <div class="row">
-  <!-- * Product Category -->
-  <div class="col-lg-6 col-md-6 col-sm-12">
+  <div class="col-xl">
     <div class="card {cardAnimate}">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="badge rounded-pill bg-label-info me-3 p-2">
-            <i class="icon-base ti tabler-archive"></i>
-          </div>
+      <div class="card-header bg-label-primary d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
+        <h5 class="card-title mb-sm-0">Tabel Produk</h5>
 
-          <div class="card-info">
-            <h5 class="mb-0">
-              {#if isLoading}
-                <span class="placeholder-glow">
-                  <span class="placeholder col-12" aria-hidden="true"></span>
-                </span>
-              {:else}
-                {productCategoryCount}
-              {/if}
-            </h5>
+        <div>
+          <button type="button" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="icon-base ti tabler-filter me-1"></i>
+            Filter
+          </button>
 
-            <small> Kategori Produk </small>
-          </div>
+          <a href="/dashboard/product/create">
+            <button type="button" class="btn btn-primary">
+              <i class="icon-base ti tabler-plus me-1"></i>
+              Tambah
+            </button>
+          </a>
         </div>
+      </div>
+
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-label mb-0" for="perPage">Tampilkan</label>
+
+          <select class="form-select w-auto" id="perPage" bind:value={perPage} onchange={handlePerPageChange}>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+
+          <span class="text-muted">entri</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered mt-5">
+            <thead class="text-center">
+              <tr>
+                <th> No </th>
+
+                <th> Kategori </th>
+
+                <th> Nama </th>
+
+                <th> Harga </th>
+
+                <th> Diterbitkan Pada </th>
+
+                <th> Aksi </th>
+              </tr>
+            </thead>
+
+            {#if isLoading}
+              <TableSkeleton row={perPage} columns={6} />
+            {:else}
+              <tbody class="text-center">
+                {#if data.length > 0}
+                  {#each data as row, index}
+                    <tr>
+                      <td class="text-center">
+                        {index + 1}
+                      </td>
+
+                      <td>
+                        {row.product_category.name}
+                      </td>
+
+                      <td>
+                        {row.name}
+                      </td>
+
+                      <td>
+                        {FormatterHelper.formatNumber(row.price, true)}
+                      </td>
+
+                      <td>
+                        {FormatterHelper.formatDatetime(row.published_at)}
+                      </td>
+
+                      <td>
+                        <div class="dropdown">
+                          <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-label="Menu aksi">
+                            <i class="icon-base ti tabler-dots-vertical"></i>
+                          </button>
+
+                          <div class="dropdown-menu">
+                            <a class="dropdown-item text-success" href="/dashboard/product/edit/{HashHelper.encrypt(row.id)}">
+                              <i class="icon-base ti tabler-edit me-1"></i>
+                              Ubah
+                            </a>
+
+                            <!-- svelte-ignore a11y_invalid_attribute -->
+                            <a class="dropdown-item text-danger" href="javascript:void(0);" onclick={() => handleDelete(HashHelper.encrypt(row.id))}>
+                              <i class="icon-base ti tabler-trash me-1"></i>
+                              Hapus
+                            </a>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  {/each}
+                {:else}
+                  <tr>
+                    <td colspan="6" class="text-center">Tidak ada data yang tersedia pada tabel ini</td>
+                  </tr>
+                {/if}
+              </tbody>
+            {/if}
+          </table>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <PaginationTable {isLoading} {page} {perPage} {lastPage} {total} {fetchData} />
       </div>
     </div>
   </div>
+</div>
 
-  <!-- * Product -->
-  <div class="col-lg-6 col-md-6 col-sm-12">
-    <div class="card {cardAnimate}">
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <div class="badge rounded-pill bg-label-success me-3 p-2">
-            <i class="icon-base ti tabler-file-text"></i>
-          </div>
+<div class="modal fade" id="filterModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Filter</h5>
 
-          <div class="card-info">
-            <h5 class="mb-0">
-              {#if isLoading}
-                <span class="placeholder-glow">
-                  <span class="placeholder col-12" aria-hidden="true"></span>
-                </span>
-              {:else}
-                {productCount}
-              {/if}
-            </h5>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
 
-            <small> Produk </small>
+      <form id="filterForm" method="GET" action="javascript:void(0)" enctype="multipart/form-data" onsubmit={handleFilter}>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12">
+              <div class="mb-3">
+                <label class="form-label" for="filterProductCategoryId"> Kategori </label>
+
+                <select
+                  class="form-select select2-modal"
+                  name="filter[productCategoryId]"
+                  id="filterProductCategoryId"
+                  bind:value={filterForm.productCategoryId}>
+                  <option value="">Pilih Salah Satu</option>
+
+                  {#each productCategory as row}
+                    <option value={row.id}>{row.name}</option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+
+            <div class="col-lg-12 col-md-12 col-sm-12">
+              <div class="mb-3">
+                <label class="form-label" for="filterName"> Nama </label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  name="filter[name]"
+                  id="filterName"
+                  bind:value={filterForm.name}
+                  placeholder="Masukkan Nama"
+                  autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="col-lg-12 col-md-12 col-sm-12">
+              <div class="mb-3">
+                <label class="form-label" for="filterPrice"> Harga </label>
+
+                <div class="input-group">
+                  <span class="input-group-text"> Rp </span>
+
+                  <input
+                    type="text"
+                    class="form-control regex-number"
+                    name="filter[price]"
+                    id="filterPrice"
+                    bind:value={filterForm.price}
+                    onkeyup={(e) => {
+                      formatNumberElement(e.currentTarget);
+                      filterForm.price = (e.currentTarget as HTMLInputElement).value;
+                    }}
+                    onpaste={(e) => {
+                      setTimeout(() => {
+                        formatNumberElement(e.currentTarget);
+                        filterForm.price = (e.currentTarget as HTMLInputElement).value;
+                      }, 0);
+                    }}
+                    placeholder="Masukkan Harga"
+                    autocomplete="off" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="icon-base ti tabler-x me-1"></i>
+            Batal
+          </button>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="icon-base ti tabler-checkbox me-1"></i>
+            Terapkan
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import ProductCategoryApi from "$lib/api/product_category_api";
+  import ProductApi from "$lib/api/product_api";
 
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
@@ -20,7 +20,7 @@
 
     blockCard();
 
-    let response = await ProductCategoryApi.createProductCategory(payload);
+    let response = await ProductApi.createProduct(payload);
 
     unblockCard();
 

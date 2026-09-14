@@ -4,9 +4,9 @@
 
   import { goto } from "$app/navigation";
 
-  import { login } from "$lib/api/auth_api";
+  import AuthApi from "$lib/api/auth_api";
 
-  import { saveSession } from "$lib/helpers/auth_helper";
+  import AuthHelper from "$lib/helpers/auth_helper";
 
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
@@ -42,7 +42,7 @@
 
     blockCard();
 
-    let result = await login(payload);
+    let result = await AuthApi.login(payload);
 
     unblockCard();
 
@@ -51,7 +51,7 @@
       let token = result.token.access_token;
       let expiredAt = result.token.expired_at;
 
-      saveSession(user, token, expiredAt);
+      AuthHelper.saveSession(user, token, expiredAt);
 
       await goto("/dashboard/home");
     } else {

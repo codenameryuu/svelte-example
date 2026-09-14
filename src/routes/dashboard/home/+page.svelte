@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { getProduct } from "$lib/api/product_api";
-  import { getProductCategory } from "$lib/api/product_category_api";
+  import ProductApi from "$lib/api/product_api";
+  import ProductCategoryApi from "$lib/api/product_category_api";
 
   import { cardAnimate } from "$lib/utils/animate";
 
@@ -21,8 +21,8 @@
       orderType: "asc",
     };
 
-    let productResponse = await getProduct(payload);
-    let productCategoryResponse = await getProductCategory(payload);
+    let productResponse = await ProductApi.getProduct(payload);
+    let productCategoryResponse = await ProductCategoryApi.getProductCategory(payload);
 
     if (productResponse.status) {
       productCount = productResponse.pagination.total;

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { logout } from "$lib/api/auth_api";
+  import AuthApi from "$lib/api/auth_api";
 
-  import { getSession, clearSession } from "$lib/helpers/auth_helper";
+  import AuthHelper from "$lib/helpers/auth_helper";
 
   type ThemeValue = "light" | "dark" | "system";
 
-  let session = getSession();
+  let session = AuthHelper.getSession();
 
   let user = $state(session.user);
   let activeTheme = $state<ThemeValue>("light");
@@ -34,9 +34,9 @@
 
     window.location.href = "/";
 
-    await logout();
+    await AuthApi.logout();
 
-    clearSession();
+    AuthHelper.clearSession();
   }
 
   onMount(() => {

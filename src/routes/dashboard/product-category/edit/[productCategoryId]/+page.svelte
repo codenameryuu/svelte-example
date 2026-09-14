@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import { onMount } from "svelte";
 
-  import { detailProductCategory, updateProductCategory } from "$lib/api/product_category_api";
+  import ProductCategoryApi from "$lib/api/product_category_api";
 
   import InputSkeleton from "$lib/components/InputSkeleton.svelte";
   import TextareaSkeleton from "$lib/components/TextareaSkeleton.svelte";
@@ -31,7 +31,7 @@
       productCategoryId: productCategoryId,
     };
 
-    let response = await detailProductCategory(payload);
+    let response = await ProductCategoryApi.detailProductCategory(payload);
 
     if (response.status) {
       editForm.name = response.data.name ?? "";
@@ -52,7 +52,7 @@
 
     blockCard();
 
-    let response = await updateProductCategory(payload);
+    let response = await ProductCategoryApi.updateProductCategory(payload);
 
     unblockCard();
 

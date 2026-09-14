@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { getProductCategory, deleteProductCategory } from "$lib/api/product_category_api";
+  import ProductCategoryApi from "$lib/api/product_category_api";
 
   import TableSkeleton from "$lib/components/TableSkeleton.svelte";
   import PaginationTable from "$lib/components/PaginationTable.svelte";
@@ -50,7 +50,7 @@
       }),
     };
 
-    let response = await getProductCategory(payload);
+    let response = await ProductCategoryApi.getProductCategory(payload);
 
     if (response.status) {
       data = response.data;
@@ -69,7 +69,7 @@
       productCategoryId: id,
     };
 
-    let response = await deleteProductCategory(payload);
+    let response = await ProductCategoryApi.deleteProductCategory(payload);
 
     if (response.status) {
       notifySuccess(response.message);

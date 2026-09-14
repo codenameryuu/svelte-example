@@ -1,43 +1,72 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { onMount } from "svelte";
 
-  import ProductCategoryApi from "$lib/api/product_category_api";
+  import ProductApi from "$lib/api/product_api";
+
+  import InputSkeleton from "$lib/components/InputSkeleton.svelte";
+  import TextareaSkeleton from "$lib/components/TextareaSkeleton.svelte";
+
+  import HashHelper from "$lib/helpers/hash_helper";
 
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
   import { notifyDanger, notifySuccess } from "$lib/utils/izi_toast";
 
-  let createForm = $state({
+  let isLoading = $state(true);
+  let productId = $state(0);
+
+  let editForm = $state({
     name: "",
     description: "",
   });
 
-  async function createData() {
+  async function fetchData() {
+    isLoading = true;
+
+    let hashId = page.params.productId ?? "";
+    productId = HashHelper.decrypt(hashId);
+
     let payload = {
-      name: createForm.name,
-      description: createForm.description,
+      productId: productId,
+    };
+
+    let response = await ProductApi.detailProduct(payload);
+
+    if (response.status) {
+      editForm.name = response.data.name ?? "";
+      editForm.description = response.data.description ?? "";
+    } else {
+      notifyDanger(response.message);
+    }
+
+    isLoading = false;
+  }
+
+  async function updateData() {
+    let payload = {
+      productId: productId,
+      name: editForm.name,
+      description: editForm.description,
     };
 
     blockCard();
 
-    let response = await ProductCategoryApi.createProductCategory(payload);
+    let response = await ProductApi.updateProduct(payload);
 
     unblockCard();
 
     if (response.status) {
       notifySuccess(response.message);
-
-      createForm.name = "";
-      createForm.description = "";
     } else {
       notifyDanger(response.message);
     }
   }
 
   function initFormValidation() {
-    let createFormDocumentElement = document.getElementById("createForm");
+    let editFormDocumentElement = document.getElementById("editForm");
 
-    FormValidation.formValidation(createFormDocumentElement, {
+    FormValidation.formValidation(editFormDocumentElement, {
       fields: {
         name: {
           validators: {
@@ -86,26 +115,28 @@
         cancelButtonText: "Batal",
       }).then(async (result: any) => {
         if (result.isConfirmed) {
-          await createData();
+          await updateData();
         }
       });
     });
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await fetchData();
+
     initFormValidation();
   });
 </script>
 
 <div class="row">
   <div class="col-xl">
-    <form id="createForm" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
+    <form id="editForm" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
       <div class="card {cardAnimate}">
         <div class="card-header sticky-element bg-label-primary d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
-          <h5 class="card-title mb-sm-0">Tambah Data</h5>
+          <h5 class="card-title mb-sm-0">Ubah Data</h5>
 
           <div class="action-btns">
-            <a href="/dashboard/product-category">
+            <a href="/dashboard/product">
               <button type="button" class="btn btn-secondary me-2">
                 <i class="icon-base ti tabler-arrow-back-up me-1"></i>
                 Kembali
@@ -125,7 +156,11 @@
               <div class="mb-3">
                 <label class="form-label" for="name"> Nama </label>
 
-                <input type="text" class="form-control" name="name" id="name" bind:value={createForm.name} placeholder="Masukkan Nama" autocomplete="off" />
+                {#if isLoading}
+                  <InputSkeleton />
+                {:else}
+                  <input type="text" class="form-control" name="name" id="name" bind:value={editForm.name} placeholder="Masukkan Nama" autocomplete="off" />
+                {/if}
               </div>
             </div>
 
@@ -133,15 +168,19 @@
               <div class="mb-3">
                 <label class="form-label" for="description"> Deskripsi </label>
 
-                <textarea
-                  class="form-control"
-                  name="description"
-                  id="description"
-                  bind:value={createForm.description}
-                  placeholder="Masukkan Deskripsi"
-                  autocomplete="off"
-                  cols="30"
-                  rows="5"></textarea>
+                {#if isLoading}
+                  <TextareaSkeleton />
+                {:else}
+                  <textarea
+                    class="form-control"
+                    name="description"
+                    id="description"
+                    bind:value={editForm.description}
+                    placeholder="Masukkan Deskripsi"
+                    autocomplete="off"
+                    cols="30"
+                    rows="5"></textarea>
+                {/if}
               </div>
             </div>
           </div>
