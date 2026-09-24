@@ -30,7 +30,6 @@
   });
 
   async function fetchData(targetPage = page) {
-    isLoading = true;
     page = targetPage;
 
     let filterPayload: Record<string, string> = {};
@@ -56,8 +55,6 @@
       data = response.data;
       pagination = response.pagination;
     }
-
-    isLoading = false;
   }
 
   async function deleteData(hashId: string) {
@@ -83,7 +80,19 @@
   }
 
   async function handlePerPageChange() {
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
+  }
+
+  async function handlePageChange(targetPage: number) {
+    isLoading = true;
+
+    await fetchData(targetPage);
+
+    isLoading = false;
   }
 
   async function handleFilter(e: SubmitEvent) {
@@ -96,7 +105,11 @@
       modal.hide();
     }
 
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
   }
 
   async function handleDelete(hashId: string) {
@@ -120,7 +133,11 @@
   }
 
   onMount(async () => {
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
   });
 </script>
 
@@ -220,7 +237,7 @@
       </div>
 
       <div class="card-footer">
-        <PaginationTable {isLoading} {page} {perPage} {lastPage} {total} {fetchData} />
+        <PaginationTable {isLoading} {page} {perPage} {lastPage} {total} fetchData={handlePageChange} />
       </div>
     </div>
   </div>

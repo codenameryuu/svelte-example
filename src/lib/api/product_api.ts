@@ -83,12 +83,15 @@ export default class ProductApi {
 
     let formData = new FormData();
 
-    formData.append('product_category_id', request.productCategoryId);
+    formData.append('product_category_id', String(request.productCategoryId));
     formData.append('name', request.name);
     formData.append('description', request.description);
-    formData.append('price', request.price);
+    formData.append('price', String(request.price));
     formData.append('published_at', request.publishedAt);
-    formData.append('photo_file', request.photoFile);
+
+    if (request.photoFile) {
+      formData.append('photo_file', request.photoFile);
+    }
 
     return await axios.post(url, formData, {
       headers: {

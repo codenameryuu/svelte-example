@@ -56,7 +56,6 @@
   }
 
   async function fetchData(targetPage = page) {
-    isLoading = true;
     page = targetPage;
 
     let filterPayload: Record<string, string> = {};
@@ -90,8 +89,6 @@
       data = response.data;
       pagination = response.pagination;
     }
-
-    isLoading = false;
   }
 
   async function deleteData(hashId: string) {
@@ -113,11 +110,27 @@
 
     unblockCard();
 
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
+  }
+
+  async function handlePageChange(targetPage: number) {
+    isLoading = true;
+
+    await fetchData(targetPage);
+
+    isLoading = false;
   }
 
   async function handlePerPageChange() {
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
   }
 
   async function handleFilter(e: SubmitEvent) {
@@ -130,7 +143,11 @@
       modal.hide();
     }
 
+    isLoading = true;
+
     await fetchData(1);
+
+    isLoading = false;
   }
 
   async function handleDelete(hashId: string) {
@@ -155,14 +172,19 @@
 
   function initSelect2() {
     let jQuery = window.jQuery;
-    let element = jQuery("#filterProductCategoryId");
+    let filterProductCategoryIdElemet = jQuery("#filterProductCategoryId");
 
-    loadElementSelect2Modal(element);
+    loadElementSelect2Modal(filterProductCategoryIdElemet);
   }
 
   onMount(async () => {
+    isLoading = true;
+
     await fetchProductCategory();
     await fetchData(1);
+
+    isLoading = false;
+
     await tick();
     loadRegex();
     initSelect2();
@@ -283,7 +305,7 @@
       </div>
 
       <div class="card-footer">
-        <PaginationTable {isLoading} {page} {perPage} {lastPage} {total} {fetchData} />
+        <PaginationTable {isLoading} {page} {perPage} {lastPage} {total} fetchData={handlePageChange} />
       </div>
     </div>
   </div>

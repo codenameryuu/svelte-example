@@ -27,11 +27,15 @@
     if (response.status) {
       notifySuccess(response.message);
 
-      createForm.name = "";
-      createForm.description = "";
+      resetForm();
     } else {
       notifyDanger(response.message);
     }
+  }
+
+  function resetForm() {
+    createForm.name = "";
+    createForm.description = "";
   }
 
   function initFormValidation() {

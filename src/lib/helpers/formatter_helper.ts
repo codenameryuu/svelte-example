@@ -154,11 +154,11 @@ export default class FormatterHelper {
   /**
    ** Convert to integer
    *
-   * @param number
+   * @param string
    * @return number
    */
-  public static convertToInteger(number: number) {
-    let cleanNumber = number.toString().replace(/\./g, "");
+  public static convertToInteger(numberString: string) {
+    let cleanNumber = numberString.replace(/\./g, "");
 
     let result = parseInt(cleanNumber);
 
