@@ -1,50 +1,31 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
 
-  import ProductApi from "$lib/api/product_api";
-  import ProductCategoryApi from "$lib/api/product_category_api";
-
   import InputSkeleton from "$lib/components/InputSkeleton.svelte";
   import TextareaSkeleton from "$lib/components/TextareaSkeleton.svelte";
 
   import HashHelper from "$lib/helpers/hash_helper";
-  import FormatterHelper from "$lib/helpers/formatter_helper";
 
   import { cardAnimate } from "$lib/utils/animate";
   import { blockCard, unblockCard } from "$lib/utils/block_ui";
-  import { loadElementDropify } from "$lib/utils/dropify";
   import { notifyDanger, notifySuccess } from "$lib/utils/izi_toast";
-  import { loadElementDatetimeFlatpickr } from "$lib/utils/flatpickr";
   import { formatNumberElement } from "$lib/utils/formatter";
   import { loadRegex } from "$lib/utils/regex";
-  import { loadElementSelect2 } from "$lib/utils/select2";
-  import "$lib/utils/select2_translation";
+
+  import { createProductData, fetchProductCategoryList } from "./actions";
+  import { getEmptyCreateForm, resetFormPlugins } from "./form";
+  import { initDropify, initFlatpickr, initFormValidation, initSelect2 } from "./init";
 
   let isLoading = $state(true);
-  let isReserForm = false;
+  let isResetForm = false;
 
   let productCategory = $state<any[]>([]);
   let fv: any = null;
 
-  let createForm = $state({
-    productCategoryId: "",
-    name: "",
-    description: "",
-    price: "",
-    publishedAt: "",
-    photoFile: null as File | null,
-  });
+  let createForm = $state(getEmptyCreateForm());
 
   async function fetchProductCategory() {
-    let payload = {
-      isPaginate: false,
-      page: 1,
-      perPage: 10,
-      orderBy: "name",
-      orderType: "asc",
-    };
-
-    let response = await ProductCategoryApi.getProductCategory(payload);
+    let response = await fetchProductCategoryList();
 
     if (response.status) {
       productCategory = response.data;
@@ -52,21 +33,9 @@
   }
 
   async function createData() {
-    let productCategoryId = HashHelper.decrypt(createForm.productCategoryId);
-    let price = FormatterHelper.convertToInteger(createForm.price);
-
-    let payload = {
-      productCategoryId: productCategoryId,
-      name: createForm.name,
-      description: createForm.description,
-      price: price,
-      publishedAt: createForm.publishedAt,
-      photoFile: createForm.photoFile,
-    };
-
     blockCard();
 
-    let response = await ProductApi.createProduct(payload);
+    let response = await createProductData(createForm);
 
     unblockCard();
 
@@ -79,232 +48,14 @@
   }
 
   function resetForm() {
-    let jQuery = window.jQuery;
-    isReserForm = true;
+    isResetForm = true;
+    createForm = getEmptyCreateForm();
+    resetFormPlugins(fv);
 
-    createForm.productCategoryId = "";
-    createForm.name = "";
-    createForm.description = "";
-    createForm.price = "";
-    createForm.publishedAt = "";
-    createForm.photoFile = null;
-
-    let productCategoryIdElement = jQuery("#productCategoryId");
-    productCategoryIdElement.val("").trigger("change.select2");
-
-    let publishedAtElement = jQuery("#publishedAt");
-    let flatpickrInstance = (
-      publishedAtElement[0] as HTMLElement & {
-        _flatpickr?: { clear: (triggerChangeEvent?: boolean) => void };
-      }
-    )?._flatpickr;
-
-    if (flatpickrInstance) {
-      flatpickrInstance.clear(false);
-    }
-
-    publishedAtElement.next().removeClass("is-invalid");
-
-    let photoFileElement = jQuery("#photoFile");
-    let dropifyInstance = photoFileElement.data("dropify") as { clearElement?: () => void } | undefined;
-    if (dropifyInstance?.clearElement) {
-      dropifyInstance.clearElement();
-    }
-
-    photoFileElement.parent().removeClass("border-danger border-2");
-
-    if (fv) {
-      fv.resetForm(false);
-    }
-  }
-
-  function initSelect2() {
-    let jQuery = window.jQuery;
-    let productCategoryIdElement = jQuery("#productCategoryId");
-
-    if (!productCategoryIdElement.length) {
-      return;
-    }
-
-    loadElementSelect2(productCategoryIdElement);
-
-    productCategoryIdElement.on("change", function () {
-      createForm.productCategoryId = String(productCategoryIdElement.val() ?? "");
-    });
-  }
-
-  function initFlatpickr() {
-    let jQuery = window.jQuery;
-    let publishedAtElement = jQuery("#publishedAt");
-
-    loadElementDatetimeFlatpickr(publishedAtElement);
-
-    publishedAtElement.on("change", function () {
-      createForm.publishedAt = String(publishedAtElement.val() ?? "");
-    });
-  }
-
-  function initDropify() {
-    let jQuery = window.jQuery;
-    let photoFileElement = jQuery("#photoFile");
-
-    loadElementDropify(photoFileElement);
-
-    photoFileElement.on("change", function () {
-      let input = photoFileElement[0] as HTMLInputElement;
-      createForm.photoFile = input.files?.[0] ?? null;
-    });
-  }
-
-  function initFormValidation() {
-    let createFormDocumentElement = document.getElementById("createForm");
-
-    fv = FormValidation.formValidation(createFormDocumentElement, {
-      fields: {
-        productCategoryId: {
-          validators: {
-            notEmpty: {
-              message: "Pilih kategori terlebih dahulu !",
-            },
-          },
-        },
-
-        name: {
-          validators: {
-            notEmpty: {
-              message: "Nama tidak boleh kosong !",
-            },
-          },
-        },
-
-        description: {
-          validators: {
-            notEmpty: {
-              message: "Deskripsi tidak boleh kosong !",
-            },
-          },
-        },
-
-        price: {
-          validators: {
-            notEmpty: {
-              message: "Harga tidak boleh kosong !",
-            },
-          },
-        },
-
-        publishedAt: {
-          validators: {
-            callback: {
-              callback: function (_input: unknown) {
-                if (isReserForm) {
-                  return {
-                    valid: true,
-                  };
-                }
-
-                let jQuery = window.jQuery;
-                let publishedAtElement = jQuery("#publishedAt");
-                let nextElement = publishedAtElement.next();
-
-                if (nextElement.hasClass("is-invalid")) {
-                  nextElement.removeClass("is-invalid");
-                }
-
-                if (publishedAtElement.val() == "") {
-                  nextElement.addClass("is-invalid");
-
-                  return {
-                    valid: false,
-                    message: "Diterbitkan pada tidak boleh kosong !",
-                  };
-                }
-
-                return {
-                  valid: true,
-                };
-              },
-            },
-          },
-        },
-
-        photoFile: {
-          validators: {
-            callback: {
-              callback: function (_input: unknown) {
-                if (isReserForm) {
-                  return {
-                    valid: true,
-                  };
-                }
-
-                let jQuery = window.jQuery;
-                let photoFileElement = jQuery("#photoFile");
-
-                photoFileElement.parent().removeClass("border-danger border-2");
-
-                if (photoFileElement.val() == "") {
-                  photoFileElement.parent().addClass("border-danger border-2");
-
-                  return {
-                    valid: false,
-                    message: "Foto tidak boleh kosong !",
-                  };
-                }
-
-                return {
-                  valid: true,
-                };
-              },
-            },
-          },
-        },
-      },
-      plugins: {
-        bootstrap5: new FormValidation.plugins.Bootstrap5({
-          eleValidClass: "",
-          rowSelector: ".mb-3",
-        }),
-        defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-        trigger: new FormValidation.plugins.Trigger(),
-        submitButton: new FormValidation.plugins.SubmitButton(),
-      },
-      init: (instance: { on: (event: string, handler: (e: { element: HTMLElement; messageElement: HTMLElement }) => void) => void }) => {
-        instance.on("plugins.message.placed", function (e) {
-          if (e.element.parentElement?.classList.contains("input-group")) {
-            e.element.parentElement.insertAdjacentElement("afterend", e.messageElement);
-          }
-        });
-      },
-    }).on("core.form.valid", async function () {
-      Swal.fire({
-        icon: "question",
-        text: "Apakah Anda yakin ingin menyimpan data ini ?",
-        showCancelButton: true,
-        buttonsStyling: false,
-        reverseButtons: true,
-        customClass: {
-          confirmButton: "btn btn-primary",
-          cancelButton: "btn btn-secondary",
-        },
-        confirmButtonText: "Simpan",
-        cancelButtonText: "Batal",
-      }).then(async (result: any) => {
-        if (result.isConfirmed) {
-          await createData();
-        }
-      });
-    });
-
-    let jQuery = window.jQuery;
-    let productCategoryIdElement = jQuery("#productCategoryId");
-    productCategoryIdElement.on("change.select2", function () {
-      if (isReserForm) {
-        return;
-      }
-
-      void fv.revalidateField("productCategoryId");
-    });
+    setTimeout(() => {
+      resetFormPlugins(fv);
+      isResetForm = false;
+    }, 0);
   }
 
   onMount(async () => {
@@ -316,10 +67,23 @@
 
     await tick();
     loadRegex();
-    initSelect2();
-    initFlatpickr();
-    initDropify();
-    initFormValidation();
+
+    initSelect2((value) => {
+      createForm.productCategoryId = value;
+    });
+
+    initFlatpickr((value) => {
+      createForm.publishedAt = value;
+    });
+
+    initDropify((file) => {
+      createForm.photoFile = file;
+    });
+
+    fv = initFormValidation({
+      isResetting: () => isResetForm,
+      onValid: createData,
+    });
   });
 </script>
 
